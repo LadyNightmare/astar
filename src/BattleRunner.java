@@ -2,6 +2,7 @@ import Tools.BattleSpecs;
 import Tools.Coords;
 import robocode.control.*;
 
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 //
@@ -74,44 +75,23 @@ public class BattleRunner {
 
     private static void createAgent(BattleSpecs specs, RobotSpecification[] existingRobots, RobotSpecification[] modelRobots, RobotSetup[] robotSetups, Coords[] placedDucks) {
         existingRobots[specs.getNumObstacles()] = modelRobots[1];
-        Coords agentCoords = randomOriginalCoords(specs.getNumRows(), specs.getNumCol(), placedDucks, specs.getNumObstacles());
+        Coords agentCoords = Coords.randomOriginalCoords(specs, placedDucks, specs.getNumObstacles(), ThreadLocalRandom.current());
         robotSetups[specs.getNumObstacles()] = new RobotSetup(
                 agentCoords.getRow() * 64 + 32, agentCoords.getCol()  * 64 + 32, 0.0);
     }
 
     private static Coords[] randomDucks(BattleSpecs specs, RobotSpecification[] modelRobots, RobotSetup[] robotSetups, RobotSpecification[] existingRobots) {
         Coords duckCoords[] = new Coords[specs.getNumObstacles()];
+        Random seeder = new Random();
+        seeder.setSeed(64);
 
         for (int i = 0; i < specs.getNumObstacles(); i++) {
             existingRobots[i] = modelRobots[0];
-            duckCoords[i] = randomOriginalCoords(specs.getNumRows(), specs.getNumCol(), duckCoords, i);
+            duckCoords[i] = Coords.randomOriginalCoords(specs, duckCoords, i, seeder);
 
             robotSetups[i] = new RobotSetup(duckCoords[i].getRow() * 64 + 32, duckCoords[i].getCol() * 64 + 32, 0.0);
         }
 
         return duckCoords;
-    }
-
-    private static Coords randomOriginalCoords(int numRows, int numCol, Coords[] duckCoords, int i) {
-        Coords newCoords;
-
-        do {
-            newCoords = new Coords(ThreadLocalRandom.current().nextInt(0, numRows),
-                    ThreadLocalRandom.current().nextInt(0, numCol));
-        } while (!isOriginal(newCoords, duckCoords, i));
-
-        return newCoords;
-    }
-
-    private static boolean isOriginal(Coords newCoords, Coords[] duckCoords, int i) {
-        boolean isOriginal = true;
-        int j = 0;
-
-        while (isOriginal && j < i) {
-            isOriginal = !newCoords.equals(duckCoords[j]);
-            j++;
-        }
-
-        return isOriginal;
     }
 }
