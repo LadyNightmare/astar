@@ -7,13 +7,28 @@ import robocode.Robot;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static Tools.Coords.randomOriginalCoords;
+
 public class RouteBot extends Robot {
     private BattleSpecs specs;
+    private Coords[] duckCoords;
 
     @Override
     public void run() {
         setSpecs();
-        Coords[] duckPlaces = getDucks();
+        duckCoords = getDucks();
+        while (true) {
+
+            ahead(100);
+
+            turnGunRight(360);
+
+            back(100);
+
+            turnGunRight(360);
+            setSpecs();
+
+        }
     }
 
     private void setSpecs() {
@@ -34,13 +49,4 @@ public class RouteBot extends Robot {
         return duckCoords;
     }
 
-    public static Coords randomOriginalCoords(BattleSpecs specs, Coords[] duckCoords, int i, Random seeder) {
-        Coords newCoords;
-
-        do {
-            newCoords = new Coords(seeder.nextInt(specs.getNumRows()), seeder.nextInt(specs.getNumCol()));
-        } while (!Coords.areOriginal(newCoords, duckCoords, i));
-
-        return newCoords;
-    }
 }

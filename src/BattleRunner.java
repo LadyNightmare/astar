@@ -52,7 +52,7 @@ public class BattleRunner {
 
     private static BattleSpecs getBattleSpecs(int numRows, int numCol) {
         BattleSpecs battleSpecs = new BattleSpecs();
-        battleSpecs.setNumObstacles(new Double(numRows * numCol * 0.3).intValue());
+        battleSpecs.setNumObstacles((int) (numRows * numCol * 0.3));
         battleSpecs.setRoundsNumber(5);
         battleSpecs.setGunCoolingRate(1.0);
         battleSpecs.setHideEnemyNames(true);
@@ -67,9 +67,11 @@ public class BattleRunner {
         RobotSpecification[] modelRobots = engine.getLocalRepository("sample.SittingDuck,searchPractice.RouteBot*");
         RobotSetup[] robotSetups = new RobotSetup[specs.getNumObstacles() + 1];
 
+        System.out.println("BattleRunner bots: ");
         Coords[] placedDucks = randomDucks(specs, modelRobots, robotSetups, existingRobots);
 
         createAgent(specs, existingRobots, modelRobots, robotSetups, placedDucks);
+
         return robotSetups;
     }
 
@@ -88,6 +90,7 @@ public class BattleRunner {
         for (int i = 0; i < specs.getNumObstacles(); i++) {
             existingRobots[i] = modelRobots[0];
             duckCoords[i] = Coords.randomOriginalCoords(specs, duckCoords, i, seeder);
+            System.out.println(duckCoords[i]);
 
             robotSetups[i] = new RobotSetup(duckCoords[i].getRow() * 64 + 32, duckCoords[i].getCol() * 64 + 32, 0.0);
         }

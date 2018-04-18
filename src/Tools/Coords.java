@@ -11,6 +11,15 @@ public class Coords {
         col = y;
     }
 
+    public static void printArray(Coords[] placedDucks) {
+        int length = (int) Math.sqrt(placedDucks.length);
+        for (int i = 0; i < length; i++) {
+            for (int j = 0; j < length; j++) {
+                System.out.println(placedDucks[length*i + j]);
+            }
+        }
+    }
+
     public double getCol() {
         return col;
     }
@@ -44,5 +53,10 @@ public class Coords {
         } while (!Coords.areOriginal(newCoords, duckCoords, i));
 
         return newCoords;
+    }
+
+    @Override
+    public String toString() {
+        return "(" + row*64+32 + ", " + col*64+32 + ")";
     }
 }
