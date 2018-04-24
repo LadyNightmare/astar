@@ -1,76 +1,45 @@
 package Tools;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 public class BattleSpecs {
-    private int numObstacles;
-    private int roundsNumber;
-    private int inactivityTime;
-    private double gunCoolingRate;
-    private int sentryBorderSize;
-    private boolean hideEnemyNames;
-    private int numRows;
-    private int numCol;
+    public int numObstacles;
+    public int roundsNumber;
+    public int inactivityTime;
+    public double gunCoolingRate;
+    public int sentryBorderSize;
+    public boolean hideEnemyNames;
+    public int numRows;
+    public int numCol;
+    public int seed;
 
-    public int getNumRows() {
-        return numRows;
+
+    public static BattleSpecs getBattleSpecs() throws FileNotFoundException {
+        BattleSpecs battleSpecs = new BattleSpecs();
+
+        Scanner specScanner = generateScanner();
+
+        int numRows = Integer.parseInt(specScanner.nextLine());
+        int numCol = Integer.parseInt(specScanner.nextLine());
+        battleSpecs.seed = Integer.parseInt(specScanner.nextLine());
+
+        battleSpecs.numObstacles = ((int) (numRows * numCol * 0.3));
+        battleSpecs.roundsNumber = (5);
+        battleSpecs.gunCoolingRate = (1.0);
+        battleSpecs.hideEnemyNames = (true);
+        battleSpecs.inactivityTime = (10000000);
+        battleSpecs.sentryBorderSize = (50);
+        battleSpecs.numRows = (numRows);
+        battleSpecs.numCol = (numCol);
+        return battleSpecs;
     }
 
-    public void setNumRows(int numRows) {
-        this.numRows = numRows;
-    }
+    private static Scanner generateScanner() throws FileNotFoundException {
+        Scanner specScanner = new Scanner(new File("battleProperties"));
+        specScanner.nextLine();
 
-    public int getNumCol() {
-        return numCol;
-    }
-
-    public void setNumCol(int numCol) {
-        this.numCol = numCol;
-    }
-
-    public int getNumObstacles() {
-        return numObstacles;
-    }
-
-    public void setNumObstacles(int numObstacles) {
-        this.numObstacles = numObstacles;
-    }
-
-    public int getRoundsNumber() {
-        return roundsNumber;
-    }
-
-    public void setRoundsNumber(int roundsNumber) {
-        this.roundsNumber = roundsNumber;
-    }
-
-    public int getInactivityTime() {
-        return inactivityTime;
-    }
-
-    public void setInactivityTime(int inactivityTime) {
-        this.inactivityTime = inactivityTime;
-    }
-
-    public double getGunCoolingRate() {
-        return gunCoolingRate;
-    }
-
-    public void setGunCoolingRate(double gunCoolingRate) {
-        this.gunCoolingRate = gunCoolingRate;
-    }
-
-    public int getSentryBorderSize() {
-        return sentryBorderSize;
-    }
-
-    public void setSentryBorderSize(int sentryBorderSize) {
-        this.sentryBorderSize = sentryBorderSize;
-    }
-
-    public boolean getHideEnemyNames() {
-        return hideEnemyNames;
-    }
-
-    public void setHideEnemyNames(boolean hideEnemyNames) {
-        this.hideEnemyNames = hideEnemyNames;
+        return specScanner;
     }
 }

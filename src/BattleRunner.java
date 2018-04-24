@@ -1,8 +1,8 @@
 import Tools.BattleSpecs;
-import Tools.Coords;
+import Tools.Coord;
 import robocode.control.*;
 
-import java.util.Random;
+import java.io.FileNotFoundException;
 import java.util.concurrent.ThreadLocalRandom;
 
 //
@@ -13,18 +13,19 @@ import java.util.concurrent.ThreadLocalRandom;
 //
 public class BattleRunner {
 
-    public static void main(String[] args) {
-        if (args.length < 3){
-            System.err.println("Propers parameter are: pathname numRows numCol");
-        }
-        else {
+    private static BattleSpecs specs;
+
+    public static void main(String[] args) throws FileNotFoundException {
+        if (args.length < 1) {
+            System.err.println("Please introduce as parameter robocode pathname");
+        } else {
             String pathname = args[0];
-            int numRows = Integer.parseInt(args[1]);
-            int numCol = Integer.parseInt(args[2]);
+
+            specs = BattleSpecs.getBattleSpecs();
 
             RobocodeEngine engine = getRobocodeEngine(pathname);
 
-            BattleSpecification battleSpec = generateBattle(engine, numRows, numCol);
+            BattleSpecification battleSpec = generateBattle(engine);
 
             engine.runBattle(battleSpec, true);
             engine.close();
@@ -39,62 +40,42 @@ public class BattleRunner {
         return engine;
     }
 
-    private static BattleSpecification generateBattle(RobocodeEngine engine, int numRows, int numCol) {
-        BattlefieldSpecification battlefield = new BattlefieldSpecification(numCol * 64, numRows * 64);
-        BattleSpecs specs = getBattleSpecs(numRows, numCol);
+    private static BattleSpecification generateBattle(RobocodeEngine engine) {
+        BattlefieldSpecification battlefield = new BattlefieldSpecification(specs.numCol * 64, specs.numRows * 64);
+        RobotSpecification[] existingRobots = new RobotSpecification[specs.numObstacles + 1];
 
-        RobotSpecification[] existingRobots = new RobotSpecification[specs.getNumObstacles() + 1];
-
-        RobotSetup[] robotSetups = getRobotSetups(engine, specs, existingRobots);
-        return new BattleSpecification(battlefield, specs.getRoundsNumber(), specs.getInactivityTime(), specs.getGunCoolingRate(),
-                specs.getSentryBorderSize(), specs.getHideEnemyNames(), existingRobots, robotSetups);
+        RobotSetup[] robotSetups = getRobotSetups(engine, existingRobots);
+        return new BattleSpecification(battlefield, specs.roundsNumber, specs.inactivityTime, specs.gunCoolingRate,
+                specs.sentryBorderSize, specs.hideEnemyNames, existingRobots, robotSetups);
     }
 
-    private static BattleSpecs getBattleSpecs(int numRows, int numCol) {
-        BattleSpecs battleSpecs = new BattleSpecs();
-        battleSpecs.setNumObstacles((int) (numRows * numCol * 0.3));
-        battleSpecs.setRoundsNumber(5);
-        battleSpecs.setGunCoolingRate(1.0);
-        battleSpecs.setHideEnemyNames(true);
-        battleSpecs.setInactivityTime(10000000);
-        battleSpecs.setSentryBorderSize(50);
-        battleSpecs.setNumRows(numRows);
-        battleSpecs.setNumCol(numCol);
-        return battleSpecs;
-    }
 
-    private static RobotSetup[] getRobotSetups(RobocodeEngine engine, BattleSpecs specs, RobotSpecification[] existingRobots) {
+    private static RobotSetup[] getRobotSetups(RobocodeEngine engine, RobotSpecification[] existingRobots) {
         RobotSpecification[] modelRobots = engine.getLocalRepository("sample.SittingDuck,searchPractice.RouteBot*");
-        RobotSetup[] robotSetups = new RobotSetup[specs.getNumObstacles() + 1];
+        RobotSetup[] robotSetups = new RobotSetup[specs.numObstacles + 1];
 
         System.out.println("BattleRunner bots: ");
-        Coords[] placedDucks = randomDucks(specs, modelRobots, robotSetups, existingRobots);
+        Coord[] randomDucks = Coord.randomCoords(specs);
+        placeDucks(randomDucks, modelRobots, robotSetups, existingRobots);
 
-        createAgent(specs, existingRobots, modelRobots, robotSetups, placedDucks);
+        createAgent(existingRobots, modelRobots, robotSetups, randomDucks);
 
         return robotSetups;
     }
 
-    private static void createAgent(BattleSpecs specs, RobotSpecification[] existingRobots, RobotSpecification[] modelRobots, RobotSetup[] robotSetups, Coords[] placedDucks) {
-        existingRobots[specs.getNumObstacles()] = modelRobots[1];
-        Coords agentCoords = Coords.randomOriginalCoords(specs, placedDucks, specs.getNumObstacles(), ThreadLocalRandom.current());
-        robotSetups[specs.getNumObstacles()] = new RobotSetup(
-                agentCoords.getRow() * 64 + 32, agentCoords.getCol()  * 64 + 32, 0.0);
+    private static void placeDucks(Coord[] ducksToPlace, RobotSpecification[] modelRobots, RobotSetup[] robotSetups, RobotSpecification[] existingRobots) {
+        RobotSpecification sittingDuck = modelRobots[0];
+
+        for (int i = 0; i < ducksToPlace.length; i++) {
+            existingRobots[i] = sittingDuck;
+            robotSetups[i] = new RobotSetup(ducksToPlace[i].getRow() * 64 + 32, ducksToPlace[i].getCol() * 64 + 32, 0.0);
+        }
     }
 
-    private static Coords[] randomDucks(BattleSpecs specs, RobotSpecification[] modelRobots, RobotSetup[] robotSetups, RobotSpecification[] existingRobots) {
-        Coords duckCoords[] = new Coords[specs.getNumObstacles()];
-        Random seeder = new Random();
-        seeder.setSeed(64);
-
-        for (int i = 0; i < specs.getNumObstacles(); i++) {
-            existingRobots[i] = modelRobots[0];
-            duckCoords[i] = Coords.randomOriginalCoords(specs, duckCoords, i, seeder);
-            System.out.println(duckCoords[i]);
-
-            robotSetups[i] = new RobotSetup(duckCoords[i].getRow() * 64 + 32, duckCoords[i].getCol() * 64 + 32, 0.0);
-        }
-
-        return duckCoords;
+    private static void createAgent(RobotSpecification[] existingRobots, RobotSpecification[] modelRobots, RobotSetup[] robotSetups, Coord[] placedDucks) {
+        existingRobots[specs.numObstacles] = modelRobots[1];
+        Coord agentCoord = Coord.randomOriginalCoord(specs, placedDucks, specs.numObstacles, ThreadLocalRandom.current());
+        robotSetups[specs.numObstacles] = new RobotSetup(
+                agentCoord.getRow() * 64 + 32, agentCoord.getCol() * 64 + 32, 0.0);
     }
 }
