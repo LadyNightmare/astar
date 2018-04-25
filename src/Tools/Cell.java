@@ -44,17 +44,26 @@ public class Cell {
         return cellCoord;
     }
 
+    public Cell getPrevious() {
+        return previous;
+    }
+
     @Override
     public boolean equals(Object o) {
+
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         Cell cell = (Cell) o;
-        return heuristic == cell.heuristic &&
-                Objects.equals(cellCoord, cell.cellCoord);
+
+        if (f != cell.f) return false;
+        return cellCoord.equals(cell.cellCoord);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(heuristic, cellCoord);
+        int result = f;
+        result = 31 * result + cellCoord.hashCode();
+        return result;
     }
 }
