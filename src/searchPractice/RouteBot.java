@@ -8,10 +8,7 @@ import Tools.Coord;
 import robocode.Robot;
 
 import java.io.FileNotFoundException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RouteBot extends Robot {
@@ -37,20 +34,70 @@ public class RouteBot extends Robot {
         openSet = new HashSet<>();
         closedSet = new HashSet<>();
 
-        astar();
+        Cell end = astar();
+
+        if (end != null){
+            trackToEnd(end);
+        }
     }
 
-    private void astar() {
-        openSet.add(new Cell(init, 0, 0));
-        while (!openSet.isEmpty()) {
-            Cell currentCell = getLesserF();
-            if (currentCell.getCoord().equals(end)){
-
-            }
-            openSet.addAll(neighbours(currentCell));
-            closedSet.add(currentCell);
-
+    private void trackToEnd(Cell end) {
+        Cell current = end;
+        List<Cell> path = new ArrayList<>();
+        path.add(current);
+        while (current.getPrevious() != null){
+            current = current.getPrevious();
+            path.add(0, current);
         }
+    }
+
+    private Cell astar() {
+        boolean solved = false;
+        Cell finalCell = null;
+
+        openSet.add(new Cell(init, 0, 0));
+        while (!openSet.isEmpty() && !solved) {
+            Cell currentCell = getLesserF();
+            if (currentCell.getCoord().equals(end)) {
+                solved = true;
+                finalCell = currentCell;
+            } else {
+                closedSet.add(currentCell);
+                openSet.remove(currentCell);
+                addWithoutRepetition(openSet, neighbours(currentCell));
+            }
+        }
+
+        return finalCell;
+    }
+
+    private void addWithoutRepetition(Set<Cell> openSet, Set<Cell> neighbours) {
+        //Checks if there is already on openSet a Cell with less F
+        Set<Cell> alreadyAdded = new HashSet<>();
+
+        for (Cell potential : neighbours) {
+            if (!closedSet.contains(potential)) {
+                checkIfExists(openSet, potential);
+            } else {
+                alreadyAdded.add(potential);
+            }
+        }
+
+        neighbours.removeAll(alreadyAdded);
+        openSet.addAll(neighbours);
+    }
+
+    private void checkIfExists(Set<Cell> openSet, Cell potential) {
+        Set<Cell> toReplace = new HashSet<>();
+
+        for (Cell alreadyIn : openSet) {
+            if (potential.getCoord().equals(alreadyIn.getCoord())
+                    && potential.getF() < alreadyIn.getF()) {
+                toReplace.add(alreadyIn);
+            }
+        }
+
+        openSet.removeAll(toReplace);
     }
 
     private Cell getLesserF() {
