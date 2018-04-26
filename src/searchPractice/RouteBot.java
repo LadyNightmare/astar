@@ -5,6 +5,7 @@ package searchPractice;
 import Tools.BattleSpecs;
 import Tools.Cell;
 import Tools.Coord;
+import Tools.Coord.Cardinal;
 import robocode.Robot;
 
 import java.io.FileNotFoundException;
@@ -21,27 +22,94 @@ public class RouteBot extends Robot {
     private Set<Cell> closedSet;
 
     public void run() {
+        System.out.println("HEY I'M ALIVE");
+
+        initialize();
+
+        Cell end = astar();
+
+        driveToEnd(end);
+    }
+
+    private void driveToEnd(Cell end) {
+        if (end != null){
+            List<Cell> track = trackToEnd(end);
+            followTrack(track);
+        }
+    }
+
+    private void followTrack(List<Cell> track) {
+        while (!track.isEmpty()){
+            Cell nextCell = track.get(0);
+            moveToCell(nextCell);
+            track.remove(0);
+        }
+    }
+
+    private void moveToCell(Cell nextCell) {
+        Coord actualPosition = new Coord((getX()-32)/64,(getY()-32)/64);
+        Cardinal orientation = getOrientation();
+        headToNexCell(nextCell, orientation);
+    }
+
+
+    private void headToNexCell(Cell nextCell, Cardinal orientation) {
+        Cardinal nextPosition = null;
+        int horizontalDelta = (int) Math.round(nextCell.getCol() - getX());
+        int verticalDelta = (int) Math.round(nextCell.getRow() - getY());
+
+        if(horizontalDelta > 0)
+            nextPosition = Cardinal.EAST;
+        else if (horizontalDelta < 0)
+            nextPosition = Cardinal.WEST;
+        else if (verticalDelta > 0)
+            nextPosition = Cardinal.NORTH;
+        else if (verticalDelta < 0)
+            nextPosition = Cardinal.SOUTH;
+
+        headToCardinal(orientation, nextPosition);
+    }
+
+    private void headToCardinal(Cardinal currentOrientation, Cardinal nextOrientation) {
+
+    }
+
+    private Cardinal getOrientation() {
+        int degreesHeading = (int) Math.round(getHeading());
+        Cardinal orientation;
+        switch (degreesHeading){
+            case 0:
+                orientation = Cardinal.NORTH;
+                break;
+            case 90:
+                orientation = Cardinal.EAST;
+                break;
+            case 180:
+                orientation = Cardinal.SOUTH;
+                break;
+            case 270:
+                orientation = Cardinal.WEST;
+                break;
+        }
+    }
+
+    private void initialize() {
         try {
             specs = BattleSpecs.getBattleSpecs();
         } catch (FileNotFoundException e) {
             System.err.println("There is a problem with the battleProperties file");
         }
-        init = new Coord(this.getX(), this.getY());
+        init = new Coord((this.getX() - 32)/64, (this.getY() - 32)/64);
 
-        end = new Coord(ThreadLocalRandom.current().nextDouble(specs.numRows)
-                , ThreadLocalRandom.current().nextDouble(specs.numCol));
+        duckCoords = Coord.randomCoords(specs);
+
+        end = Coord.randomOriginalCoord(specs, duckCoords, specs.numObstacles, ThreadLocalRandom.current());
 
         openSet = new HashSet<>();
         closedSet = new HashSet<>();
-
-        Cell end = astar();
-
-        if (end != null){
-            trackToEnd(end);
-        }
     }
 
-    private void trackToEnd(Cell end) {
+    private List<Cell> trackToEnd(Cell end) {
         Cell current = end;
         List<Cell> path = new ArrayList<>();
         path.add(current);
@@ -49,6 +117,8 @@ public class RouteBot extends Robot {
             current = current.getPrevious();
             path.add(0, current);
         }
+
+        return path;
     }
 
     private Cell astar() {
@@ -157,6 +227,7 @@ public class RouteBot extends Robot {
 
         while (isFree && i < duckCoords.length) {
             isFree = !coordToTest.equals(duckCoords[i]);
+            i++;
         }
 
         return isFree;

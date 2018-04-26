@@ -36,6 +36,21 @@ public class Cell {
         return cellCoord.getCol();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Cell cell = (Cell) o;
+
+        return cellCoord.equals(cell.cellCoord);
+    }
+
+    @Override
+    public int hashCode() {
+        return cellCoord.hashCode();
+    }
+
     public double getRow(){
         return cellCoord.getRow();
     }
@@ -48,22 +63,4 @@ public class Cell {
         return previous;
     }
 
-    @Override
-    public boolean equals(Object o) {
-
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Cell cell = (Cell) o;
-
-        if (f != cell.f) return false;
-        return cellCoord.equals(cell.cellCoord);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = f;
-        result = 31 * result + cellCoord.hashCode();
-        return result;
-    }
 }
