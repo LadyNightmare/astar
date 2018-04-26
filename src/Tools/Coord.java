@@ -6,7 +6,7 @@ import java.util.Random;
 public class Coord {
     public enum Cardinal {
         NORTH(0), EAST(90), SOUTH(180), WEST(270);
-        private int degrees;
+        public int degrees;
 
         Cardinal(int degrees){
             this.degrees = degrees;

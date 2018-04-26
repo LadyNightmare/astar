@@ -32,14 +32,14 @@ public class RouteBot extends Robot {
     }
 
     private void driveToEnd(Cell end) {
-        if (end != null){
-            List<Cell> track = trackToEnd(end);
+        if (end != null) {
+            List<Cell> track = induceTrackFromEnd(end);
             followTrack(track);
         }
     }
 
     private void followTrack(List<Cell> track) {
-        while (!track.isEmpty()){
+        while (!track.isEmpty()) {
             Cell nextCell = track.get(0);
             moveToCell(nextCell);
             track.remove(0);
@@ -47,37 +47,44 @@ public class RouteBot extends Robot {
     }
 
     private void moveToCell(Cell nextCell) {
-        Coord actualPosition = new Coord((getX()-32)/64,(getY()-32)/64);
-        Cardinal orientation = getOrientation();
-        headToNexCell(nextCell, orientation);
+        Cardinal currentOrientation = getCurrentOrientation();
+        headToNextCell(nextCell, currentOrientation);
+        ahead(64);
     }
 
+    //Programilla tenso
+    private void headToNextCell(Cell nextCell, Cardinal currentOrientation) {
+        Cardinal nextHeading = null;
+        int horizontalDelta = (int) Math.round(nextCell.getCol() - (getX() - 32) / 64);
+        int verticalDelta = (int) Math.round(nextCell.getRow() - (getY() - 32) / 64);
 
-    private void headToNexCell(Cell nextCell, Cardinal orientation) {
-        Cardinal nextPosition = null;
-        int horizontalDelta = (int) Math.round(nextCell.getCol() - getX());
-        int verticalDelta = (int) Math.round(nextCell.getRow() - getY());
-
-        if(horizontalDelta > 0)
-            nextPosition = Cardinal.EAST;
+        if (horizontalDelta > 0)
+            nextHeading = Cardinal.EAST;
         else if (horizontalDelta < 0)
-            nextPosition = Cardinal.WEST;
+            nextHeading = Cardinal.WEST;
         else if (verticalDelta > 0)
-            nextPosition = Cardinal.NORTH;
+            nextHeading = Cardinal.NORTH;
         else if (verticalDelta < 0)
-            nextPosition = Cardinal.SOUTH;
+            nextHeading = Cardinal.SOUTH;
 
-        headToCardinal(orientation, nextPosition);
+        headToCardinal(currentOrientation, nextHeading);
     }
 
     private void headToCardinal(Cardinal currentOrientation, Cardinal nextOrientation) {
+        double turnAngle = nextOrientation.degrees - currentOrientation.degrees;
 
+        if (turnAngle > 0){
+            turnRight(turnAngle);
+        } else {
+            turnLeft(Math.abs(turnAngle));
+        }
     }
 
-    private Cardinal getOrientation() {
+    //Puede lanzar NullPointerException
+    private Cardinal getCurrentOrientation() {
         int degreesHeading = (int) Math.round(getHeading());
-        Cardinal orientation;
-        switch (degreesHeading){
+        Cardinal orientation = null;
+        switch (degreesHeading) {
             case 0:
                 orientation = Cardinal.NORTH;
                 break;
@@ -91,6 +98,7 @@ public class RouteBot extends Robot {
                 orientation = Cardinal.WEST;
                 break;
         }
+        return orientation;
     }
 
     private void initialize() {
@@ -99,7 +107,7 @@ public class RouteBot extends Robot {
         } catch (FileNotFoundException e) {
             System.err.println("There is a problem with the battleProperties file");
         }
-        init = new Coord((this.getX() - 32)/64, (this.getY() - 32)/64);
+        init = new Coord((this.getX() - 32) / 64, (this.getY() - 32) / 64);
 
         duckCoords = Coord.randomCoords(specs);
 
@@ -109,14 +117,18 @@ public class RouteBot extends Robot {
         closedSet = new HashSet<>();
     }
 
-    private List<Cell> trackToEnd(Cell end) {
+    private List<Cell> induceTrackFromEnd(Cell end) {
         Cell current = end;
         List<Cell> path = new ArrayList<>();
         path.add(current);
-        while (current.getPrevious() != null){
+
+        while (current.getPrevious() != null) {
             current = current.getPrevious();
             path.add(0, current);
         }
+
+        //We need to remove first because we cant travel to the same Tile
+        path.remove(0);
 
         return path;
     }
@@ -126,6 +138,7 @@ public class RouteBot extends Robot {
         Cell finalCell = null;
 
         openSet.add(new Cell(init, 0, 0));
+
         while (!openSet.isEmpty() && !solved) {
             Cell currentCell = getLesserF();
             if (currentCell.getCoord().equals(end)) {
@@ -143,41 +156,41 @@ public class RouteBot extends Robot {
 
     private void addWithoutRepetition(Set<Cell> openSet, Set<Cell> neighbours) {
         //Checks if there is already on openSet a Cell with less F
-        Set<Cell> alreadyAdded = new HashSet<>();
+        Set<Cell> alreadyAddedOnAnySet = new HashSet<>();
 
         for (Cell potential : neighbours) {
-            if (!closedSet.contains(potential)) {
-                checkIfExists(openSet, potential);
-            } else {
-                alreadyAdded.add(potential);
-            }
+            if (closedSet.contains(potential) || openSet.contains(potential))
+                alreadyAddedOnAnySet.add(potential);
         }
 
-        neighbours.removeAll(alreadyAdded);
+        neighbours.removeAll(alreadyAddedOnAnySet);
         openSet.addAll(neighbours);
     }
 
-    private void checkIfExists(Set<Cell> openSet, Cell potential) {
-        Set<Cell> toReplace = new HashSet<>();
+    //Useless method, due to the cartesian characteristic of the board this method doesnt make sense
+    private void checkIfIsOnOpenSet(Set<Cell> openSet, Cell potential) {
+        Cell toReplace = null;
 
         for (Cell alreadyIn : openSet) {
-            if (potential.getCoord().equals(alreadyIn.getCoord())
-                    && potential.getF() < alreadyIn.getF()) {
-                toReplace.add(alreadyIn);
+            if (potential.equals(alreadyIn) && potential.getF() < alreadyIn.getF()) {
+                toReplace = alreadyIn;
             }
         }
 
-        openSet.removeAll(toReplace);
+        if (toReplace != null) {
+            openSet.remove(toReplace);
+            openSet.add(potential);
+        }
     }
 
     private Cell getLesserF() {
-        Iterator setIterator = openSet.iterator();
-        Cell potentialNode = (Cell) setIterator.next();
+        Iterator hashSetIterator = openSet.iterator();
+        Cell potentialNode = (Cell) hashSetIterator.next();
 
-        while (setIterator.hasNext()) {
-            Cell iteratedNode = (Cell) setIterator.next();
+        while (hashSetIterator.hasNext()) {
+            Cell iteratedNode = (Cell) hashSetIterator.next();
 
-            if (iteratedNode.getF() > potentialNode.getF()) {
+            if (iteratedNode.getF() < potentialNode.getF()) {
                 potentialNode = iteratedNode;
             }
         }
