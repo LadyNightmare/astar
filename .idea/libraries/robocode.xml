@@ -3,6 +3,7 @@
     <CLASSES>
       <root url="jar://$USER_HOME$/robocode/libs/robocode.jar!/" />
       <root url="jar:///opt/robocode/libs/robocode.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../robocode/libs/robocode.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

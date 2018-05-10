@@ -1,5 +1,7 @@
 package Tools;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class Cell {
@@ -8,6 +10,7 @@ public class Cell {
     private int f;
     private Coord cellCoord;
     private Cell previous;
+    private List<Coord.Cardinal> directions;
 
     public int getG() {
         return traveledDistance;
@@ -17,16 +20,22 @@ public class Cell {
         return heuristic;
     }
 
+    public List<Coord.Cardinal> getDirections() {
+        return directions;
+    }
+
     public Cell(Coord position, int hValue, int gValue){
        cellCoord = position;
        heuristic = hValue;
        traveledDistance = gValue;
        f = hValue + gValue;
+       directions = new ArrayList<>();
+
     }
 
-    public Cell(Coord position, int hValue, int gValue, Cell previous){
+    public Cell(Coord position, int hValue, int gValue, List<Coord.Cardinal> nextHeading){
         this(position, hValue, gValue);
-        this.previous = previous;
+        this.directions = nextHeading;
     }
 
     public double getF(){

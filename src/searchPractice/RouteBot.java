@@ -8,9 +8,10 @@ import Tools.Coord;
 import Tools.Coord.Cardinal;
 import robocode.Robot;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class RouteBot extends Robot {
     private Coord[] duckCoords;
@@ -21,51 +22,59 @@ public class RouteBot extends Robot {
     private Set<Cell> openSet;
     private Set<Cell> closedSet;
 
+    private PrintWriter writer;
+
     public void run() {
         System.out.println("HEY I'M ALIVE");
+        try {
+            writer = new PrintWriter(new File("directions.txt"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
         initialize();
 
         Cell end = astar();
 
-        driveToEnd(end);
-    }
-
-    private void driveToEnd(Cell end) {
-        if (end != null) {
-            List<Cell> track = induceTrackFromEnd(end);
-            followTrack(track);
+        if(Objects.nonNull(end)) {
+            followTrack(end.getDirections());
         }
+        writer.close();
     }
 
-    private void followTrack(List<Cell> track) {
+    private void followTrack(List<Cardinal> track) {
         while (!track.isEmpty()) {
-            Cell nextCell = track.get(0);
-            moveToCell(nextCell);
+            Cardinal nextHeading = track.get(0);
+            moveToHeading(nextHeading);
             track.remove(0);
         }
     }
 
-    private void moveToCell(Cell nextCell) {
+    private void moveToHeading(Cardinal nextHeading) {
         Cardinal currentOrientation = getCurrentOrientation();
-        headToNextCell(nextCell, currentOrientation);
+        headToCardinal(currentOrientation, nextHeading);
         ahead(64);
     }
 
     //Programilla tenso
     private void headToNextCell(Cell nextCell, Cardinal currentOrientation) {
         Cardinal nextHeading = null;
-        int horizontalDelta = (int) Math.round(nextCell.getCol() - (getX() - 32) / 64);
+        int horizontalDelta = (int) Math.round(nextCell.getCol() - ((getX() - 32) / 64));
         int verticalDelta = (int) Math.round(nextCell.getRow() - (getY() - 32) / 64);
 
-        if (horizontalDelta > 0)
+        if (horizontalDelta > 0) {
             nextHeading = Cardinal.EAST;
-        else if (horizontalDelta < 0)
+            writer.print("→\n");
+        } else if (horizontalDelta < 0) {
             nextHeading = Cardinal.WEST;
-        else if (verticalDelta > 0)
+            writer.print("←\n");
+        } else if (verticalDelta > 0) {
             nextHeading = Cardinal.NORTH;
-        else if (verticalDelta < 0)
+            writer.print("↑\n");
+        } else if (verticalDelta < 0) {
             nextHeading = Cardinal.SOUTH;
+            writer.print("↓\n");
+        }
 
         headToCardinal(currentOrientation, nextHeading);
     }
@@ -73,7 +82,7 @@ public class RouteBot extends Robot {
     private void headToCardinal(Cardinal currentOrientation, Cardinal nextOrientation) {
         double turnAngle = nextOrientation.degrees - currentOrientation.degrees;
 
-        if (turnAngle > 0){
+        if (turnAngle > 0) {
             turnRight(turnAngle);
         } else {
             turnLeft(Math.abs(turnAngle));
@@ -111,7 +120,7 @@ public class RouteBot extends Robot {
 
         duckCoords = Coord.randomCoords(specs);
 
-        end = Coord.randomOriginalCoord(specs, duckCoords, specs.numObstacles, ThreadLocalRandom.current());
+        end = Coord.randomOriginalCoord(specs, duckCoords, specs.numObstacles);
 
         openSet = new HashSet<>();
         closedSet = new HashSet<>();
@@ -202,47 +211,54 @@ public class RouteBot extends Robot {
     private Set<Cell> neighbours(Cell current) {
         Set<Cell> neighbours = new HashSet<>();
 
-        if (current.getCol() - 1 >= 0 && isFree(current.getCol() - 1, current.getRow())) {
+        if (isFree(current.getCol() - 1, current.getRow())) {
             Coord leftist = new Coord(current.getCol() - 1, current.getRow());
             int heuristic = Coord.manhattanDistance(leftist, end);
+            current.getDirections().add(Cardinal.WEST);
 
-            neighbours.add(new Cell(leftist, heuristic, current.getG() + 1, current));
+            neighbours.add(new Cell(leftist, heuristic, current.getG() + 1, current.getDirections()));
         }
 
-        if (current.getRow() - 1 >= 0 && isFree(current.getCol(), current.getRow() - 1)) {
-            Coord upper = new Coord(current.getCol(), current.getRow() - 1);
+        if (isFree(current.getCol(), current.getRow() + 1)) {
+            Coord upper = new Coord(current.getCol(), current.getRow() + 1);
             int heuristic = Coord.manhattanDistance(upper, end);
+            current.getDirections().add(Cardinal.NORTH);
 
-            neighbours.add(new Cell(upper, heuristic, current.getG() + 1, current));
+
+            neighbours.add(new Cell(upper, heuristic, current.getG() + 1, current.getDirections()));
         }
 
-        if (current.getCol() + 1 < specs.numCol && isFree(current.getCol() + 1, current.getRow())) {
+        if (isFree(current.getCol() + 1, current.getRow())) {
             Coord rightist = new Coord(current.getCol() + 1, current.getRow());
             int heuristic = Coord.manhattanDistance(rightist, end);
+            current.getDirections().add(Cardinal.EAST);
 
-            neighbours.add(new Cell(rightist, heuristic, current.getG() + 1, current));
+            neighbours.add(new Cell(rightist, heuristic, current.getG() + 1, current.getDirections()));
         }
 
-        if (current.getRow() + 1 < specs.numRows && isFree(current.getCol(), current.getRow() + 1)) {
-            Coord bottomer = new Coord(current.getCol(), current.getRow() + 1);
+        if (isFree(current.getCol(), current.getRow() - 1)) {
+            Coord bottomer = new Coord(current.getCol(), current.getRow() - 1);
             int heuristic = Coord.manhattanDistance(bottomer, end);
+            current.getDirections().add(Cardinal.SOUTH);
 
-            neighbours.add(new Cell(bottomer, heuristic, current.getG() + 1, current));
+            neighbours.add(new Cell(bottomer, heuristic, current.getG() + 1, current.getDirections()));
         }
 
         return neighbours;
     }
 
     private boolean isFree(double col, double row) {
-        boolean isFree = true;
-        Coord coordToTest = new Coord(col, row);
-        int i = 0;
+        boolean isFree = col >= 0 && col <specs.numCol && row >= 0 && row < specs.numRows;
 
-        while (isFree && i < duckCoords.length) {
-            isFree = !coordToTest.equals(duckCoords[i]);
-            i++;
+        if(isFree) {
+            Coord coordToTest = new Coord(col, row);
+            int i = 0;
+
+            while (isFree && i < duckCoords.length) {
+                isFree = !coordToTest.equals(duckCoords[i]);
+                i++;
+            }
         }
-
         return isFree;
     }
 

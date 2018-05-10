@@ -4,6 +4,8 @@ import java.util.Objects;
 import java.util.Random;
 
 public class Coord {
+
+    private static Random seeder;
     public enum Cardinal {
         NORTH(0), EAST(90), SOUTH(180), WEST(270);
         public int degrees;
@@ -50,7 +52,7 @@ public class Coord {
         return isOriginal;
     }
 
-    public static Coord randomOriginalCoord(BattleSpecs specs, Coord[] duckCoords, int i, Random seeder) {
+    public static Coord randomOriginalCoord(BattleSpecs specs, Coord[] duckCoords, int i) {
         Coord newCoord;
 
         do {
@@ -63,11 +65,11 @@ public class Coord {
     // Needs numObstacles, numRows and numCol
     public static Coord[] randomCoords(BattleSpecs specs){
         Coord duckCoords[] = new Coord[specs.numObstacles];
-        Random seeder = new Random();
+        seeder = new Random();
         seeder.setSeed(specs.seed);
 
         for (int i = 0; i < specs.numObstacles; i++) {
-            duckCoords[i] = Coord.randomOriginalCoord(specs, duckCoords, i, seeder);
+            duckCoords[i] = Coord.randomOriginalCoord(specs, duckCoords, i);
         }
 
         return duckCoords;
