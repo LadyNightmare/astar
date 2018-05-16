@@ -9,7 +9,6 @@ public class Cell {
     private int traveledDistance;
     private int f;
     private Coord cellCoord;
-    private Cell previous;
     private List<Coord.Cardinal> directions;
 
     public int getG() {
@@ -66,10 +65,6 @@ public class Cell {
 
     public Coord getCoord() {
         return cellCoord;
-    }
-
-    public Cell getPrevious() {
-        return previous;
     }
 
 }
