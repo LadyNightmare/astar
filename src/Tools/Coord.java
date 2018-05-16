@@ -1,17 +1,42 @@
 package Tools;
 
+import java.io.PrintWriter;
 import java.util.Objects;
 import java.util.Random;
 
 public class Coord {
+
+    private static Random seeder;
+
     public enum Cardinal {
         NORTH(0), EAST(90), SOUTH(180), WEST(270);
         public int degrees;
 
-        Cardinal(int degrees){
+        Cardinal(int degrees) {
             this.degrees = degrees;
         }
-    };
+
+        public static Cardinal cardinalOf(int i, PrintWriter writer) {
+            Cardinal orientation = null;
+            switch (i) {
+                case 0:
+                    orientation = Cardinal.NORTH;
+                    break;
+                case 90:
+                    orientation = Cardinal.EAST;
+                    break;
+                case 180:
+                    orientation = Cardinal.SOUTH;
+                    break;
+                case 270:
+                    orientation = Cardinal.WEST;
+                    break;
+                default:
+                    writer.println("There has been an error getting heading");
+            }
+            return orientation;
+        }
+    }
 
     private double row;
     private double col;
@@ -50,7 +75,7 @@ public class Coord {
         return isOriginal;
     }
 
-    public static Coord randomOriginalCoord(BattleSpecs specs, Coord[] duckCoords, int i, Random seeder) {
+    public static Coord randomOriginalCoord(BattleSpecs specs, Coord[] duckCoords, int i) {
         Coord newCoord;
 
         do {
@@ -61,19 +86,19 @@ public class Coord {
     }
 
     // Needs numObstacles, numRows and numCol
-    public static Coord[] randomCoords(BattleSpecs specs){
+    public static Coord[] randomCoords(BattleSpecs specs) {
         Coord duckCoords[] = new Coord[specs.numObstacles];
-        Random seeder = new Random();
+        seeder = new Random();
         seeder.setSeed(specs.seed);
 
         for (int i = 0; i < specs.numObstacles; i++) {
-            duckCoords[i] = Coord.randomOriginalCoord(specs, duckCoords, i, seeder);
+            duckCoords[i] = Coord.randomOriginalCoord(specs, duckCoords, i);
         }
 
         return duckCoords;
     }
 
-    public static int manhattanDistance(Coord origin, Coord end){
+    public static int manhattanDistance(Coord origin, Coord end) {
         return (int) (Math.abs(origin.col - end.col) + Math.abs(origin.row - end.col));
     }
 
